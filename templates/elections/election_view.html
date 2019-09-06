@@ -1,0 +1,233 @@
+{% extends 'logged_in.html' %}
+{% load staticfiles %}
+
+{% block cssLinks %}
+    {{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static 'css/abcheckbox.css' %}"/>
+    <link rel="stylesheet" type="text/css" href="{% static 'css/elections/base.css' %}"/>
+    <link rel="stylesheet" type="text/css" href="{% static 'css/center-col.css' %}"/>
+{% endblock %}
+
+{% block jsLinks %}
+    {{ block.super }}
+    <script type="text/javascript">
+        var post_count = {};
+        var post_selection = {};
+        var post_candidates = {};
+        {% for post in election.posts.all %}
+            post_count[{{ post.id }}] = {{ post.number }};
+            post_selection[{{ post.id }}] = [];
+            post_candidates[{{ post.id }}] = [
+                {% for candidate in post.human_candidates %}
+                    {{ candidate.id }},
+                {% endfor %}
+                {% for candidate in post.auto_candidates %}
+                    {{ candidate.id }}{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ];
+        {% endfor %}
+
+        var session_seconds = {{ session_timeout }};
+        var $session_alert_div = $("#session-alert");
+        var session_in_danger = false;
+
+        var session_interval = window.setInterval(function () {
+            if (session_seconds < 60 && !session_in_danger) {
+                $session_alert_div.removeClass('alert-warning');
+                $session_alert_div.addClass('alert-danger');
+                $session_alert_div.addClass('blink');
+                session_in_danger = true;
+            }
+
+            if (session_seconds <= 0) {
+                clearInterval(session_interval);
+                window.location.reload();
+            }
+
+            $("#session-timeout").text(session_seconds);
+            session_seconds -= 1;
+
+        }, 1000);
+
+    </script>
+    <script type="text/javascript" src="{% static 'js/election/election.js' %}"></script>
+{% endblock %}
+
+{% block body %}
+
+    <div class="row">
+
+        <div class="col-md-12 election">
+            <div id="election-{{ election.id }}">
+
+                <div class="row">
+                    <div class="col-md-push-9 col-md-3 text-center">
+                        <div id="session-alert" class="alert alert-warning" data-spy="affix"
+                             data-smart-affix>
+                            <strong>Session expiring in: <span
+                                    id="session-timeout"> {{ session_timeout }}</span>s</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row" style="padding: 0 10px 0 10px;">
+                    <div class="col-md-12">
+                        <h1 class="election-title text-center">{{ election.name }}</h1>
+                        <p class="text-center text-primary">
+                            Created By: {{ election.creator.get_full_name }} &lt;{{ election.creator }}@iitb.ac.in&gt;
+                        </p>
+                    </div>
+                </div>
+
+                <div class="post-list">
+
+                    {% for post in election.posts.all %}
+                        <div class="post" id="post-{{ post.id }}" data-count="{{ post.number }}">
+                            <div class="text-center text-capitalize text-info">
+                                <h2 class="post-title">{{ post.name }}</h2>
+                                <h4 class="post-title">Available Posts: {{ post.number }}</h4>
+                            </div>
+
+                            <div class="row row-centered candidate-list"
+                                 style="padding-bottom: 20px;">
+
+                                {% comment %}
+                                    The following piece of code is highly unoptimized and completely intentional.
+                                {% endcomment %}
+                                {% with humans=post.human_candidates %}
+                                    {% for candidate in post.auto_candidates %}
+
+                                        {% if candidate.is_neutral %}
+                                            <div class="auto-candidate candidate text-center text-warning col-sm-4
+                                            col-md-3 col-centered">
+                                                <div class="radio"
+                                                     id="candidate-{{ candidate.id }}">
+                                                    <input name="candidate-{{ candidate.id }}"
+                                                           id="candidate-{{ candidate.id }}-yes"
+                                                           type="radio"
+                                                           value="1"
+                                                           data-post="{{ post.id }}"
+                                                           data-candidate="{{ candidate.id }}"
+                                                           data-unique="true"
+                                                           checked
+                                                    />
+                                                    <label class="caption text-capitalize text-center"
+                                                           for="candidate-{{ candidate.id }}-yes">
+                                                        <h3 style="margin: 0;">{{ candidate.name }}</h3>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+
+                                        {% if humans|length > 1 %}
+
+                                            {% if candidate.is_nota %}
+                                                <div class="auto-candidate candidate text-center text-danger col-sm-4
+                                                col-md-3 col-centered">
+                                                    <div class="radio" id="candidate
+                                                    -{{ candidate.id }}">
+                                                        <input name="candidate-{{ candidate.id }}"
+                                                               id="candidate-{{ candidate.id }}-yes"
+                                                               type="radio"
+                                                               value="1"
+                                                               data-post="{{ post.id }}"
+                                                               data-candidate="{{ candidate.id }}"
+                                                               data-unique="true"
+                                                        />
+                                                        <label for="candidate-{{ candidate.id }}-yes">
+                                                            <h3 style="margin: 0;">{{ candidate.name }}</h3>
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            {% endif %}
+                                        {% endif %}
+
+                                    {% endfor %}
+                                {% endwith %}
+                            </div>
+
+                            <div class="row row-centered candidate-list">
+
+                                {% for candidate in post.human_candidates %}
+                                    <div id="candidate-{{ candidate.id }}"
+                                         class="candidate col-sm-4 col-md-3 col-centered">
+                                        <div id="candidate-{{ candidate.id }}-poster"
+                                             class="candidate-poster thumbnail"
+                                             data-candidate="{{ candidate.id }}"
+                                        >
+                                            <img class="img-circle img-thumbnail"
+                                                 style="width: 250px; height: 250px; display: block;" src="
+                                                     {% if candidate.image %}{{ candidate.image.url }}{% else %}
+                                                     {% static 'img/default_user.png' %}{% endif %}"
+                                            >
+
+                                            <div class="caption text-capitalize text-center">
+                                                <h3>{{ candidate.name }}</h3>
+
+                                                {% comment %}Dispaly Manifesto here {% endcomment %}
+                                                {% if election.display_manifesto and candidate.manifesto %}
+                                                    <h4><a class="manifesto-url"
+                                                           href="{{ candidate.manifesto.url }}"
+                                                           target="_blank">Manifesto</a></h4>
+                                                {% endif %}
+
+                                                {% comment %}Voting buttons {% endcomment %}
+                                                <div class="radio">
+                                                    <input name="candidate-{{ candidate.id }}"
+                                                           id="candidate-{{ candidate.id }}-yes"
+                                                           type="radio"
+                                                           value="1"
+                                                           data-post="{{ post.id }}"
+                                                           data-candidate="{{ candidate.id }}"
+                                                    />
+                                                    <label for="candidate-{{ candidate.id }}-yes">
+                                                        Yes
+                                                    </label>
+                                                </div>
+                                                {% if post.number >= post.human_candidates|length %}
+                                                    <div class="radio">
+                                                        <input name="candidate-{{ candidate.id }}"
+                                                               id="candidate-{{ candidate.id }}-no"
+                                                               type="radio"
+                                                               value="-1"
+                                                               data-post="{{ post.id }}"
+                                                               data-candidate="{{ candidate.id }}"
+                                                        />
+                                                        <label for="candidate-{{ candidate.id }}-no">
+                                                            No
+                                                        </label>
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+
+                            </div>
+
+                        </div>
+                        <hr/>
+                    {% endfor %}
+
+                </div>
+            </div>
+
+            <div class="election-vote-cast center-block text-center">
+                <form method="post" id="submit-vote" data-election="{{ election.id }}">
+                    {% csrf_token %}
+                    <input type="hidden" name="votes" id="submit-form-votes-inp"/>
+                    {% if election.is_key_required %}
+                        <div class="form-group col-xs-9">
+                            <label class="sr-only" for="election-{{ election.id }}-submit">Key</label>
+                            <input class="form-control" type="text" placeholder="Voting Key" name="key"
+                                   id="election-{{ election.id }}-key-input" required/>
+                        </div>
+                    {% endif %}
+                    <button class="btn btn-primary cast-vote" data-election="{{ election.id }}">Cast Vote
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

@@ -1,0 +1,78 @@
+.accepted-candidate {
+    background: #176b17;
+}
+
+.rejected-candidate {
+    background: #810400;
+}
+
+.accepted-candidate .caption,
+.rejected-candidate .caption {
+    color: white;
+}
+
+.election-vote-cast {
+    padding: 20px 20px 20px 20px;
+}
+
+.post {
+    padding: 10px;
+}
+
+.post-title {
+    margin-top: 10px;
+}
+
+.candidate-list {
+
+}
+
+.election {
+    padding: 10px;
+}
+
+.election-title {
+    margin-top: 10px;
+    color: palevioletred;
+}
+
+.affix {
+    z-index: 100;
+    top: 10px;
+    right: 5px;
+    -webkit-transform: translateZ(0);
+    -moz-transform: translateZ(0);
+    -ms-transform: translateZ(0);
+    -o-transform: translateZ(0);
+    transform: translateZ(0);
+}
+
+.blink{
+    animation:blink 700ms infinite alternate;
+}
+
+@keyframes blink {
+    from { opacity:1; }
+    to { opacity:0.4; }
+}
+
+.thumbnail-image {
+    position:relative;
+    overflow:hidden;
+    padding-bottom:100%;
+}
+
+.manifesto-url {
+    color: #9BB8D2;
+}
+
+.manifesto-url:hover{
+    color: #9E6EBE;
+}
+
+.auto-candidate {
+    border: #D0D0D0 1px solid;
+    border-radius: 3px;
+    margin-right: 5px;
+    margin-left: 5px;
+}
