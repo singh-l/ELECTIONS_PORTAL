@@ -1,4 +1,4 @@
-Django==1.9.3
+Django==1.11.29
 django-auth-ldap-ng==1.6.0
 django-simple-history==1.7.0
 djangorestframework==3.3.2
